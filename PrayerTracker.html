@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>9-Level Master</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc; --card: #ffffff; --text: #1e293b;
+            --primary: #6366f1; --accent: #e2e8f0; --border: #e2e8f0;
+        }
+        [data-theme="dark"] {
+            --bg: #0f172a; --card: #1e293b; --text: #f1f5f9;
+            --primary: #818cf8; --border: #334155; --accent: #334155;
+        }
+        [data-palette="emerald"] { --primary: #10b981; }
+        [data-palette="rose"] { --primary: #f43f5e; }
+        [data-palette="amber"] { --primary: #f59e0b; }
+
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); 
+            margin: 0; padding: 15px; display: flex; justify-content: center; 
+            min-height: 100vh; overflow-x: hidden;
+        }
+
+        .container { width: 100%; max-width: 400px; }
+        
+        .card { 
+            background: var(--card); border-radius: 24px; padding: 20px; 
+            border: 1px solid var(--border); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); 
+            margin-bottom: 15px; 
+        }
+        
+        .hidden { display: none !important; }
+        
+        /* Setup Mobile Styling */
+        h2 { font-size: 1.5rem; margin-top: 0; letter-spacing: -0.5px; }
+        .setup-label { font-size: 0.8rem; font-weight: 700; margin: 15px 0 8px; display: block; text-transform: uppercase; opacity: 0.8; }
+        
+        .avatar-grid { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; 
+        }
+        .avatar-option { 
+            font-size: 1.8rem; cursor: pointer; border: 2px solid var(--border); 
+            border-radius: 14px; text-align: center; padding: 10px 5px; background: var(--card);
+            transition: 0.2s;
+        }
+        .avatar-option.selected { border-color: var(--primary); background: rgba(99, 102, 241, 0.15); transform: scale(1.05); }
+        
+        input, select { 
+            padding: 14px; border-radius: 12px; border: 1px solid var(--border); 
+            background: var(--bg); color: var(--text); width: 100%; font-size: 16px; /* Prevents iOS zoom on focus */
+        }
+
+        /* Progress Bars */
+        .progress-container { margin: 12px 0; }
+        .progress-label { display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 800; margin-bottom: 6px; text-transform: uppercase; }
+        .bar-bg { background: var(--accent); height: 10px; border-radius: 5px; overflow: hidden; }
+        .bar-fill { background: var(--primary); height: 100%; width: 0%; transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .bar-overall { background: linear-gradient(90deg, var(--primary), #a855f7); }
+
+        /* Mobile Checkbox Grid */
+        .check-grid { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(55px, 1fr)); 
+            gap: 12px; margin-top: 20px; 
+        }
+        .check-item { 
+            height: 55px; border-radius: 16px; border: 2px solid var(--border);
+            display: flex; align-items: center; justify-content: center; cursor: pointer; 
+            font-weight: 800; font-size: 1.1rem; transition: 0.2s;
+        }
+        .check-item.done { background: var(--primary); border-color: var(--primary); color: white; animation: pop 0.3s ease; }
+
+        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+
+        .btn { 
+            background: var(--primary); color: white; border: none; padding: 18px; 
+            border-radius: 16px; font-weight: 700; cursor: pointer; width: 100%; 
+            font-size: 1rem; margin-top: 10px; transition: 0.2s;
+        }
+        .btn:active { transform: scale(0.96); opacity: 0.9; }
+        
+        /* Popup */
+        #popup-overlay {
+            position: fixed; top:0; left:0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center;
+            z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; padding: 20px;
+        }
+        #popup-overlay.show { opacity: 1; pointer-events: auto; }
+        .popup-card { background: var(--card); padding: 30px; border-radius: 32px; text-align: center; width: 100%; max-width: 320px; }
+    </style>
+</head>
+<body data-theme="light" data-palette="default">
+
+<div id="popup-overlay">
+    <div class="popup-card">
+        <div id="popup-emoji" style="font-size: 4rem; margin-bottom: 10px;">👏</div>
+        <h2 id="popup-title" style="margin: 0;">Day Complete!</h2>
+        <p id="popup-msg" style="opacity: 0.7; margin-bottom: 20px;">Consistency is key.</p>
+        <button class="btn" onclick="nextDay()">Continue</button>
+    </div>
+</div>
+
+<div class="container">
+    <div id="setup-screen" class="card">
+        <h2>Start Your Journey</h2>
+        
+        <label class="setup-label">Username</label>
+        <input type="text" id="username" placeholder="Your Name">
+        
+        <label class="setup-label">Select Avatar</label>
+        <div style="font-size: 0.65rem; opacity: 0.5; margin-bottom: 10px;">Masculine</div>
+        <div class="avatar-grid">
+            <div class="avatar-option selected" onclick="setAvatar('🧔🏻‍♂️', this)">🧔🏻‍♂️</div>
+            <div class="avatar-option" onclick="setAvatar('‍🧑🏻', this)">‍🧑🏻</div>
+            <div class="avatar-option" onclick="setAvatar('🧙‍♂️', this)">🧙‍♂️</div>
+            <div class="avatar-option" onclick="setAvatar('🥷', this)">🥷</div>
+        </div>
+        <div style="font-size: 0.65rem; opacity: 0.5; margin: 15px 0 10px;">Feminine</div>
+        <div class="avatar-grid">
+            <div class="avatar-option" onclick="setAvatar('👩🏻‍💼', this)">👩🏻‍💼</div>
+            <div class="avatar-option" onclick="setAvatar('👩🏼‍🚀', this)">👩🏼‍🚀</div>
+            <div class="avatar-option" onclick="setAvatar('🧝‍♀️', this)">🧝‍♀️</div>
+            <div class="avatar-option" onclick="setAvatar('🧜‍♀️', this)">🧜‍♀️</div>
+        </div>
+
+        <label class="setup-label">Theme & Color</label>
+        <div style="display: flex; gap: 10px;">
+            <select id="theme-select" onchange="applyTheme()"><option value="light">Light</option><option value="dark">Dark</option></select>
+            <select id="palette-select" onchange="applyTheme()"><option value="default">Indigo</option><option value="emerald">Green</option><option value="rose">Red</option><option value="amber">Gold</option></select>
+        </div>
+        
+        <button class="btn" onclick="start()">Begin Training</button>
+    </div>
+
+    <div id="app-screen" class="card hidden">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span id="ui-avatar" style="font-size: 2.2rem;"></span>
+                <div>
+                    <strong id="ui-name" style="font-size: 1.1rem; display: block;"></strong>
+                    <span style="font-size: 0.75rem; opacity: 0.6; font-weight: 700;">LEVEL <span id="ui-level-num">1</span></span>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 0.6rem; font-weight: 800; opacity: 0.5; display: block; text-transform: uppercase;">Current Day</span>
+                <span id="ui-day" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">1</span>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-label"><span>Mastery Progress</span><span id="ui-overall-pct">0%</span></div>
+            <div class="bar-bg"><div id="bar-overall" class="bar-fill bar-overall"></div></div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-label"><span>Level <span id="ui-level-num2">1</span> Progress</span><span id="ui-level-txt">0/9 Days</span></div>
+            <div class="bar-bg"><div id="bar-level" class="bar-fill"></div></div>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <div class="progress-label"><span>Today's Repetitions</span><span id="ui-rep-count">0/9</span></div>
+            <div class="check-grid" id="check-grid"></div>
+        </div>
+
+        <button class="btn" style="background:none; color: #ef4444; font-size: 0.7rem; margin-top: 40px; border: 1px solid transparent;" onclick="reset()">Reset Progress</button>
+    </div>
+</div>
+
+<script>
+    let state = JSON.parse(localStorage.getItem('habit9_mobile')) || {
+        user: 'Warrior', avatar: '🧔🏻‍♂️', theme: 'light', palette: 'default',
+        day: 1, dailyDone: 0, started: false
+    };
+
+    function setAvatar(a, el) {
+        state.avatar = a;
+        document.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+    }
+
+    function applyTheme() {
+        state.theme = document.getElementById('theme-select').value;
+        state.palette = document.getElementById('palette-select').value;
+        document.body.setAttribute('data-theme', state.theme);
+        document.body.setAttribute('data-palette', state.palette);
+    }
+
+    function start() {
+        state.user = document.getElementById('username').value || 'Warrior';
+        state.started = true;
+        save(); render();
+    }
+
+    function toggleCheck(index) {
+        const level = Math.ceil(state.day / 9);
+        const repsNeeded = Math.min(level * 9, 108);
+
+        if (index === state.dailyDone) {
+            state.dailyDone++;
+            if (state.dailyDone === repsNeeded) {
+                showCelebration(state.day % 9 === 0);
+            }
+        } else if (index === state.dailyDone - 1) {
+            state.dailyDone--;
+        }
+        save(); render();
+    }
+
+    function showCelebration(isLevelUp) {
+        const overlay = document.getElementById('popup-overlay');
+        const title = document.getElementById('popup-title');
+        const emoji = document.getElementById('popup-emoji');
+        const msg = document.getElementById('popup-msg');
+
+        if (isLevelUp) {
+            emoji.innerText = '🔥';
+            title.innerText = 'LEVEL UP!';
+            msg.innerText = 'You just unlocked more repetitions. Keep pushing!';
+        } else {
+            emoji.innerText = '👏';
+            title.innerText = 'Day Complete!';
+            msg.innerText = 'One step closer to mastery.';
+        }
+        overlay.classList.add('show');
+    }
+
+    function nextDay() {
+        document.getElementById('popup-overlay').classList.remove('show');
+        state.day++;
+        state.dailyDone = 0;
+        save(); render();
+    }
+
+    function render() {
+        if (!state.started) return;
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('app-screen').classList.remove('hidden');
+
+        const level = Math.ceil(state.day / 9);
+        const repsNeeded = Math.min(level * 9, 108);
+        const daysInLevel = ((state.day - 1) % 9);
+        const overallProgress = ((state.day - 1) / 81) * 100;
+
+        document.getElementById('ui-name').innerText = state.user;
+        document.getElementById('ui-avatar').innerText = state.avatar;
+        document.getElementById('ui-day').innerText = state.day;
+        document.getElementById('ui-level-num').innerText = level;
+        document.getElementById('ui-level-num2').innerText = level;
+        document.getElementById('ui-level-txt').innerText = `${daysInLevel}/9 Days`;
+        document.getElementById('ui-rep-count').innerText = `${state.dailyDone}/${repsNeeded}`;
+        document.getElementById('ui-overall-pct').innerText = `${Math.floor(overallProgress)}%`;
+        
+        document.getElementById('bar-level').style.width = `${(daysInLevel / 9) * 100}%`;
+        document.getElementById('bar-overall').style.width = `${Math.min(overallProgress, 100)}%`;
+        
+        applyTheme();
+
+        const grid = document.getElementById('check-grid');
+        grid.innerHTML = '';
+        for (let i = 0; i < repsNeeded; i++) {
+            const div = document.createElement('div');
+            div.className = `check-item ${i < state.dailyDone ? 'done' : ''}`;
+            div.innerText = i + 1;
+            div.onclick = () => toggleCheck(i);
+            grid.appendChild(div);
+        }
+    }
+
+    function save() { localStorage.setItem('habit9_mobile', JSON.stringify(state)); }
+    function reset() { if(confirm("Erase everything?")) { localStorage.clear(); location.reload(); } }
+
+    if (state.started) render();
+</script>
+</body>
+</html>
